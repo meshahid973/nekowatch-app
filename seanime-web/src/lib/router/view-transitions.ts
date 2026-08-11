@@ -1,4 +1,3 @@
-import { __isElectronDesktop__ } from "@/types/constants"
 import type { ParsedLocation } from "@tanstack/react-router"
 
 const SCROLLED_TRANSITION_THRESHOLD = 8
@@ -17,7 +16,12 @@ type DenshiViewTransition = false | {
 }
 
 export function getDenshiViewTransition(): DenshiViewTransition {
-    const enabled = supportsDenshiViewTransitions()
+    // NekoWatch Desktop intentionally disables document View Transitions.
+    // Chromium snapshots large route surfaces for this API; together with the
+    // Electron compositor this can produce stale/duplicated rectangles during
+    // repaints on some Windows GPU/driver combinations. Normal React routing is
+    // fast enough and avoids the extra composited snapshot surfaces entirely.
+    const enabled = false
 
     if (typeof document !== "undefined") {
         document.documentElement.toggleAttribute("data-denshi-view-transitions", enabled)
@@ -28,14 +32,6 @@ export function getDenshiViewTransition(): DenshiViewTransition {
     return {
         types: getDenshiViewTransitionTypes,
     }
-}
-
-function supportsDenshiViewTransitions() {
-    return __isElectronDesktop__ &&
-        typeof document !== "undefined" &&
-        typeof window !== "undefined" &&
-        "startViewTransition" in document &&
-        !window.matchMedia("(prefers-reduced-motion: reduce)").matches
 }
 
 function getDenshiViewTransitionTypes(info: ViewTransitionInfo) {
