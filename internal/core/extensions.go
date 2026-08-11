@@ -4,6 +4,7 @@ import (
 	"seanime/internal/extension"
 	"seanime/internal/extension_repo"
 	manga_providers "seanime/internal/manga/providers"
+	nekowatch_provider "seanime/internal/onlinestream/nekowatch"
 
 	"github.com/rs/zerolog"
 )
@@ -16,6 +17,19 @@ func LoadCustomSourceExtensions(extensionRepository *extension_repo.Repository) 
 
 func LoadExtensions(extensionRepository *extension_repo.Repository, logger *zerolog.Logger, config *Config) {
 	// Load built-in extensions
+	extensionRepository.ReloadBuiltInExtension(extension.Extension{
+		ID:          nekowatch_provider.ProviderID,
+		Name:        "NekoWatch",
+		Version:     "0.1.0-dev",
+		ManifestURI: "builtin",
+		Language:    extension.LanguageGo,
+		Type:        extension.TypeOnlinestreamProvider,
+		Description: "Built-in NekoWatch streaming provider backed by the NekoWatch API.",
+		Author:      "NekoWatch",
+		Lang:        "multi",
+		Website:     "https://nekowatch.xyz",
+	}, nekowatch_provider.New())
+
 	extensionRepository.ReloadBuiltInExtension(extension.Extension{
 		ID:          manga_providers.LocalProvider,
 		Name:        "Local",
