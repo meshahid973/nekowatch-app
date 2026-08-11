@@ -7,25 +7,36 @@ export function setupChromiumFlags() {
     app.commandLine.appendSwitch("disk-cache-size", (400 * 1000 * 1000).toString())
     app.commandLine.appendSwitch("force-effective-connection-type", "4g")
 
-    // NekoWatch Desktop stability mode for Windows.
+    // NekoWatch Desktop: use Chromium's normal/default GPU path on Windows.
     //
-    // Upstream Denshi enables a large set of experimental/forced Chromium GPU
-    // switches at the same time (zero-copy, hardware overlays, OOP raster,
-    // Skia renderer, unsafe WebGPU and ignore-gpu-blocklist). On some Windows
-    // GPU/driver combinations this presents as stale rectangles, flashing
-    // surfaces and sections of the React UI repainting at the wrong size.
+    // The upstream Denshi configuration forced several renderer experiments at
+    // the same time (zero-copy, hardware overlays, OOP/GPU rasterization, Skia,
+    // unsafe WebGPU and ignore-gpu-blocklist). That combination caused visible
+    // repaint corruption on Windows. Completely disabling hardware acceleration
+    // fixed the corruption, but also makes some GPU/WebGL/canvas-heavy UI paths
+    // unreliable. The stable default is therefore normal Chromium acceleration
+    // with none of those forced renderer overrides.
     //
-    // mpv-prism is a native player and is not dependent on Chromium compositing,
-    // so prefer a stable Electron shell here. Developers can temporarily opt
-    // back into Chromium GPU acceleration for comparison with:
-    // NEKOWATCH_ENABLE_CHROMIUM_GPU=1
-    const useChromiumGpu = process.env.NEKOWATCH_ENABLE_CHROMIUM_GPU === "1"
+    // Diagnostic fallback: set NEKOWATCH_SOFTWARE_RENDERER=1 before launching
+    // Electron to disable Chromium hardware acceleration entirely.
+    if (process.platform === "win32") {
+        const useSoftwareRenderer = process.env.NEKOWATCH_SOFTWARE_RENDERER === "1"
 
-    if (process.platform === "win32" && !useChromiumGpu) {
-        log.info("[NekoWatch] Windows renderer stability mode enabled (Chromium hardware acceleration disabled)")
-        app.disableHardwareAcceleration()
+        if (useSoftwareRenderer) {
+            log.info("[NekoWatch] Windows software renderer fallback enabled")
+            app.disableHardwareAcceleration()
+        } else {
+            log.info("[NekoWatch] Windows safe GPU mode enabled (Chromium defaults)")
+        }
 
-        // Keep only non-renderer behavioural feature overrides on Windows.
+        const gpuPreference = toElectronGpuPreference(process.env.MPV_PRISM_HIGH_PERFORMANCE_GPU)
+        if (!useSoftwareRenderer && gpuPreference === "high-performance") {
+            app.commandLine.appendSwitch("force_high_performance_gpu")
+        }
+        if (!useSoftwareRenderer && gpuPreference === "low-power") {
+            app.commandLine.appendSwitch("force_low_power_gpu")
+        }
+
         app.commandLine.appendSwitch("disable-features", [
             "WebContentsForceDarkMode",
             "HardwareMediaKeyHandling",
@@ -39,8 +50,7 @@ export function setupChromiumFlags() {
         return
     }
 
-    // Preserve the upstream accelerated path for non-Windows platforms and for
-    // explicit Windows diagnostics via NEKOWATCH_ENABLE_CHROMIUM_GPU=1.
+    // Preserve the upstream accelerated path on macOS/Linux for now.
     app.commandLine.appendSwitch("no-zygote")
 
     const gpuPreference = toElectronGpuPreference(process.env.MPV_PRISM_HIGH_PERFORMANCE_GPU)
