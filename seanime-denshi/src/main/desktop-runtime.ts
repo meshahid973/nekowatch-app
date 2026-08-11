@@ -7,6 +7,8 @@ const LOCAL_EMBED_HOST = "127.0.0.1"
 const DESKTOP_SERVER_HOST = "127.0.0.1"
 const DESKTOP_SERVER_DEFAULT_PORT = 43211
 const DESKTOP_SERVER_DEV_PORT = 43000
+const NEKOWATCH_UPDATE_FEED_URL = "https://github.com/meshahid973/nekowatch-app/releases/latest/download"
+const LEGACY_SEANIME_UPDATE_FEED_URL = "https://github.com/5rahim/seanime/releases/latest/download"
 
 export const allowedWebviewOrigins = new Set<string>()
 
@@ -32,23 +34,28 @@ export function isAllowedLocalEmbedURL(rawURL: string): boolean {
 }
 
 export function normalizeUpdateFeedURL(candidate: string, fallbackURL: string): string {
+    const normalizedCandidate = candidate?.trim()
+    const normalizedFallback = fallbackURL?.trim()
+
+    if (!normalizedCandidate || normalizedCandidate === LEGACY_SEANIME_UPDATE_FEED_URL) {
+        return NEKOWATCH_UPDATE_FEED_URL
+    }
+
     try {
-        const parsed = new URL(candidate)
-        if (parsed.protocol !== "https:" || !parsed.host) {
-            throw new Error("update feeds must use https")
-        }
+        const parsed = new URL(normalizedCandidate)
+        if (parsed.protocol !== "https:" || !parsed.host) throw new Error("update feeds must use https")
         return parsed.toString()
     }
     catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        log.warn(`[Denshi] Ignoring update feed URL ${candidate}: ${message}`)
-        return fallbackURL
+        log.warn(`[NekoWatch] Ignoring update feed URL ${normalizedCandidate}: ${message}`)
+        if (!normalizedFallback || normalizedFallback === LEGACY_SEANIME_UPDATE_FEED_URL) return NEKOWATCH_UPDATE_FEED_URL
+        return normalizedFallback
     }
 }
 
 export function getDesktopServerPort(): number {
     if (process.env.NODE_ENV === "development") return DESKTOP_SERVER_DEV_PORT
-
     const envPort = Number.parseInt(process.env.SEANIME_SERVER_PORT || "", 10)
     if (Number.isInteger(envPort) && envPort > 0) return envPort
     return DESKTOP_SERVER_DEFAULT_PORT
@@ -62,9 +69,7 @@ export async function isDesktopServerReachable(): Promise<boolean> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 1000)
     try {
-        const response = await net.fetch(`${getDesktopServerBaseUrl()}/api/v1/status`, {
-            signal: controller.signal,
-        })
+        const response = await net.fetch(`${getDesktopServerBaseUrl()}/api/v1/status`, { signal: controller.signal })
         return response.ok
     }
     catch {
@@ -96,11 +101,7 @@ export function startLocalServer(): number {
         }
 
         res.writeHead(200, { "Content-Type": "text/html" })
-        res.end(`<!DOCTYPE html>
-<html lang="en">
-<head><style>html,body{margin:0;height:100%;background:black}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}</style></head>
-<body><iframe src="${url}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></body>
-</html>`)
+        res.end(`<!DOCTYPE html><html lang="en"><head><style>html,body{margin:0;height:100%;background:black}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}</style></head><body><iframe src="${url}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></body></html>`)
     })
 
     server.listen(0)

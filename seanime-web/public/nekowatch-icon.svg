@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="NekoWatch App">
+  <defs>
+    <linearGradient id="nw" x1="32" y1="24" x2="224" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#c084fc"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="58" fill="#000"/>
+  <path d="M55 190V72l37 42 36-64 73 140h-36l-40-78-28 49-26-30v59H55Z" fill="url(#nw)"/>
+  <path d="M61 75 84 38l25 33M148 70l25-32 22 48" fill="none" stroke="url(#nw)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

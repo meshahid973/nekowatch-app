@@ -68,6 +68,77 @@ function AppRouterProvider() {
     return <RouterProvider router={routersByPreloadMode[preloadMode]} />
 }
 
+function NekoWatchBranding() {
+    React.useEffect(() => {
+        const normalizeTitle = () => {
+            const current = document.title.trim()
+            if (!current || current === "Seanime" || current === "Seanime Denshi" || current === "Denshi") {
+                document.title = "NekoWatch App"
+                return
+            }
+
+            const branded = current
+                .replace(/\s*\|\s*Seanime Denshi$/i, " | NekoWatch App")
+                .replace(/\s*\|\s*Seanime$/i, " | NekoWatch App")
+                .replace(/\s*\|\s*Denshi$/i, " | NekoWatch App")
+
+            if (branded !== current) document.title = branded
+        }
+
+        const replaceBrandText = (text: string) => {
+            return text
+                .replace(/Seanime Denshi/g, "NekoWatch App")
+                .replace(/•\s*Denshi/g, "• NekoWatch App Edition")
+                .replace(/^Denshi$/g, "NekoWatch App")
+                .replace(/^Seanime$/g, "NekoWatch App")
+        }
+
+        const normalizeTextNode = (node: Node) => {
+            if (node.nodeType !== Node.TEXT_NODE || !node.nodeValue) return
+            const parent = node.parentElement
+            if (!parent || ["SCRIPT", "STYLE", "CODE", "PRE", "TEXTAREA"].includes(parent.tagName)) return
+
+            const next = replaceBrandText(node.nodeValue)
+            if (next !== node.nodeValue) node.nodeValue = next
+        }
+
+        const normalizeVisibleBranding = (root: Node) => {
+            normalizeTextNode(root)
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+            let node = walker.nextNode()
+            while (node) {
+                normalizeTextNode(node)
+                node = walker.nextNode()
+            }
+        }
+
+        normalizeTitle()
+        normalizeVisibleBranding(document.body)
+
+        const titleElement = document.querySelector("title")
+        const titleObserver = titleElement ? new MutationObserver(normalizeTitle) : null
+        titleObserver?.observe(titleElement!, { childList: true, subtree: true, characterData: true })
+
+        const bodyObserver = new MutationObserver(mutations => {
+            for (const mutation of mutations) {
+                if (mutation.type === "characterData") {
+                    normalizeTextNode(mutation.target)
+                    continue
+                }
+                for (const node of mutation.addedNodes) normalizeVisibleBranding(node)
+            }
+        })
+        bodyObserver.observe(document.body, { childList: true, subtree: true, characterData: true })
+
+        return () => {
+            titleObserver?.disconnect()
+            bodyObserver.disconnect()
+        }
+    }, [])
+
+    return null
+}
+
 function DesktopStartupReady() {
     React.useEffect(() => {
         if (!__isElectronDesktop__ || window.location.pathname.startsWith("/splashscreen") || !window.electron?.startup?.ready) {
@@ -110,10 +181,8 @@ function RootErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
     return (
         <div className="min-h-screen bg-[#0c0c0c] text-white flex items-center justify-center p-6">
             <div className="w-full max-w-lg rounded-2xl border bg-black/60 p-6 text-center backdrop-blur-sm space-y-4">
-                <LuffyError
-                    title="Client error"
-                >
-                    Seanime encountered an unexpected error. Please try again.
+                <LuffyError title="NekoWatch App error">
+                    NekoWatch App encountered an unexpected error. Please try again.
                 </LuffyError>
 
                 {!!(error as Error)?.message && (
@@ -145,12 +214,6 @@ function RootErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
     )
 }
 
-// if (import.meta.env.DEV) {
-//     const script = document.createElement("script")
-//     script.src = "https://unpkg.com/react-scan/dist/auto.global.js"
-//     script.crossOrigin = "anonymous"
-//     document.head.appendChild(script)
-// }
 ReactDOM.createRoot(document.getElementById("root")!, {
     onUncaughtError: (error, errorInfo) => {
         console.error("[Root] Uncaught renderer error", error, errorInfo)
@@ -161,6 +224,7 @@ ReactDOM.createRoot(document.getElementById("root")!, {
 }).render(
     <ErrorBoundary FallbackComponent={RootErrorFallback}>
         <ClientProviders>
+            <NekoWatchBranding />
             <DesktopStartupReady />
             <AppRouterProvider />
         </ClientProviders>

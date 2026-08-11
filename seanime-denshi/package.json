@@ -1,9 +1,9 @@
 {
   "name": "seanime-denshi",
   "version": "3.10.2",
-  "description": "Electron-based Desktop client for Seanime",
+  "description": "NekoWatch App Edition - desktop anime app powered by the NekoWatch API",
   "main": "dist/main/index.js",
-  "author": "5rahim <talkwithrahim@gmail.com>",
+  "author": "NekoWatch contributors (based on Seanime by 5rahim)",
   "scripts": {
     "build:main": "tsc -p tsconfig.main.json",
     "test:main": "node --test tests/*.test.mjs",
@@ -37,37 +37,25 @@
       "mirror": "https://seanime.app/assets/electron/",
       "customDir": "v42.4.0"
     },
-    "appId": "app.seanime.denshi",
-    "productName": "Seanime Denshi",
+    "appId": "xyz.nekowatch.app",
+    "productName": "NekoWatch App",
     "asar": true,
     "extraResources": [
-      {
-        "from": "binaries",
-        "to": "binaries"
-      },
-      {
-        "from": "native-builds",
-        "to": "native-builds"
-      }
+      { "from": "binaries", "to": "binaries" },
+      { "from": "native-builds", "to": "native-builds" }
     ],
     "generateUpdatesFilesForAllChannels": true,
     "publish": {
       "provider": "generic",
-      "url": "https://github.com/5rahim/seanime/releases/latest/download",
+      "url": "https://github.com/meshahid973/nekowatch-app/releases/latest/download",
       "channel": "latest",
       "publishAutoUpdate": true,
       "useMultipleRangeRequest": false
     },
     "mac": {
+      "icon": "assets/512x512.png",
       "category": "public.app-category.entertainment",
-      "target": [
-        {
-          "target": "default",
-          "arch": [
-            "arm64"
-          ]
-        }
-      ],
+      "target": [{ "target": "default", "arch": ["arm64"] }],
       "darkModeSupport": true,
       "notarize": false,
       "hardenedRuntime": true,
@@ -78,31 +66,17 @@
       "identity": "-"
     },
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
+      "icon": "assets/512x512.png",
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
       "artifactName": "seanime-denshi-${version}_Windows_${arch}.${ext}",
       "verifyUpdateCodeSignature": false
     },
     "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
+      "icon": "assets/512x512.png",
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
       "category": "Entertainment",
       "artifactName": "seanime-denshi-${version}_Linux_${arch}.${ext}",
-      "desktop": {
-        "StartupWMClass": "seanime-denshi"
-      }
+      "desktop": { "StartupWMClass": "nekowatch-app" }
     },
     "nsis": {
       "oneClick": false,
@@ -110,14 +84,11 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "deleteAppDataOnUninstall": true,
-      "shortcutName": "Seanime Denshi",
+      "shortcutName": "NekoWatch App",
       "artifactName": "seanime-denshi-${version}_Windows_${arch}.${ext}",
       "perMachine": true
     },
-    "directories": {
-      "buildResources": "assets",
-      "output": "dist"
-    },
+    "directories": { "buildResources": "assets", "output": "dist" },
     "files": [
       "dist/main/**/*",
       "src/**/*",
@@ -135,7 +106,7 @@
       "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
       "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
       "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,yarn-metadata.json}"
     ]
   },
   "private": true
