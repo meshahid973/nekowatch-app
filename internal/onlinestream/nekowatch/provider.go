@@ -18,7 +18,7 @@ import (
 
 const (
 	ProviderID        = "nekowatch"
-	defaultAPIBaseURL = "http://127.0.0.1:8010"
+	defaultAPIBaseURL = "https://nekowatch.xyz/api/anime"
 )
 
 var providerPriority = []string{
@@ -345,6 +345,7 @@ func (p *Provider) getJSON(endpoint string, target any) error {
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "NekoWatch-Desktop/0.1.0-dev")
+	req.Header.Set("X-Requested-With", "NekoWatch")
 
 	resp, err := p.client.Do(req)
 	if err != nil {
