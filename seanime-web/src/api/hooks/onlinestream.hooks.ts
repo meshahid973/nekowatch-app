@@ -29,7 +29,7 @@ export function useGetOnlineStreamEpisodeList(id: Nullish<string | number>, prov
             provider: provider!,
             dubbed,
         },
-        enabled: !!id,
+        enabled: !!id && !!provider,
         muteError: true,
         gcTime: 0,
     })
@@ -68,7 +68,6 @@ export function __getOnlineStreamEpisodeSourceQueryKey(id: Nullish<string | numb
 
 export function useRefreshOnlineStreamEpisodeSource() {
     const qc = useQueryClient()
-
     return useServerMutation<Onlinestream_EpisodeSource, GetOnlineStreamEpisodeSource_Variables>({
         endpoint: API_ENDPOINTS.ONLINESTREAM.GetOnlineStreamEpisodeSource.endpoint,
         method: API_ENDPOINTS.ONLINESTREAM.GetOnlineStreamEpisodeSource.methods[0],
@@ -86,7 +85,6 @@ export function useRefreshOnlineStreamEpisodeSource() {
 
 export function useOnlineStreamEmptyCache() {
     const qc = useQueryClient()
-
     return useServerMutation<boolean, OnlineStreamEmptyCache_Variables>({
         endpoint: API_ENDPOINTS.ONLINESTREAM.OnlineStreamEmptyCache.endpoint,
         method: API_ENDPOINTS.ONLINESTREAM.OnlineStreamEmptyCache.methods[0],
@@ -140,7 +138,6 @@ export function useGetOnlinestreamMapping(variables: Partial<GetOnlinestreamMapp
 
 export function useRemoveOnlinestreamMapping() {
     const qc = useQueryClient()
-
     return useServerMutation<boolean, RemoveOnlinestreamMapping_Variables>({
         endpoint: API_ENDPOINTS.ONLINESTREAM.RemoveOnlinestreamMapping.endpoint,
         method: API_ENDPOINTS.ONLINESTREAM.RemoveOnlinestreamMapping.methods[0],
