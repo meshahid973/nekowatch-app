@@ -39,13 +39,13 @@ import { IoLibraryOutline } from "react-icons/io5"
 import { PiMonitorPlayDuotone } from "react-icons/pi"
 import { useUnmount } from "react-use"
 
-export const __anime_entryPageViewAtom = atom<string>("library")
+export const __anime_entryPageViewAtom = atom<string>("onlinestream")
 
 function getAutomaticAnimeEntryView(entry: Anime_Entry | undefined, serverStatus: ReturnType<typeof useServerStatus>) {
     if (entry?.libraryData) return "library"
+    if (serverStatus?.settings?.library?.enableOnlinestream) return "onlinestream"
     if (serverStatus?.debridSettings?.enabled) return "debridstream"
     if (serverStatus?.torrentstreamSettings?.enabled) return "torrentstream"
-    if (serverStatus?.settings?.library?.enableOnlinestream) return "onlinestream"
     return "library"
 }
 
@@ -186,17 +186,11 @@ export function AnimeEntryPage() {
             }
         }
 
-            if (!nextView) {
-                const defaultSource = serverStatus?.settings?.library?.defaultPlaybackSource || ""
-                const pluginId = getPluginSourceId(defaultSource)
-                if (pluginId) {
-                    if (!registeredEpisodeTabExtensions && !registeredEpisodeTabExtensionsFetched) return
-                    if (registeredEpisodeTabExtensionIds.has(pluginId)) {
-                        nextView = getPluginEpisodeTabViewId(pluginId)
-                    }
-                } else if (defaultSource && isBuiltInAnimeEntryViewAvailable(defaultSource, serverStatus)) {
-                    nextView = defaultSource
-                }
+            // NekoWatch is the native playback source for this fork. Explicit
+            // tab URLs still win, but legacy Seanime defaultPlaybackSource
+            // values must not silently send normal playback into torrent mode.
+            if (!nextView && serverStatus?.settings?.library?.enableOnlinestream) {
+                nextView = "onlinestream"
             }
 
             switchedView.current = true
@@ -240,7 +234,7 @@ export function AnimeEntryPage() {
 
     // Reset view when unmounting
     useUnmount(() => {
-        setView("library")
+        setView("onlinestream")
     })
 
     const setTorrentSearchDrawer = useSetAtom(__torrentSearch_selectionAtom)
@@ -255,6 +249,11 @@ export function AnimeEntryPage() {
                     show: currentView !== "library",
                 },
                     {
+                        id: "onlinestream",
+                        description: "NekoWatch streaming",
+                        show: serverStatus?.settings?.library?.enableOnlinestream && currentView !== "onlinestream",
+                    },
+                    {
                         id: "torrentstream",
                         description: "Torrent streaming",
                         show: serverStatus?.torrentstreamSettings?.enabled && currentView !== "torrentstream",
@@ -263,11 +262,6 @@ export function AnimeEntryPage() {
                         id: "debridstream",
                         description: "Debrid streaming",
                         show: serverStatus?.debridSettings?.enabled && currentView !== "debridstream",
-                    },
-                    {
-                        id: "onlinestream",
-                        description: "Online streaming",
-                        show: serverStatus?.settings?.library?.enableOnlinestream && currentView !== "onlinestream",
                     },
                 ].map(item => ({
                     id: item.id,
@@ -472,6 +466,12 @@ export function EntrySectionTabs(props: EntrySectionTabs) {
                     iconClass="size-5 hidden data-[current=true]:block"
                     items={[
                         { name: "Local library", iconType: IoLibraryOutline, isCurrent: isLibraryView, onClick: () => setView("library") },
+                        ...(serverStatus?.settings?.library?.enableOnlinestream ? [{
+                            name: "NekoWatch",
+                            iconType: FiGlobe,
+                            isCurrent: isOnlineStreamingView,
+                            onClick: () => setView("onlinestream"),
+                        }] : []),
                         ...(serverStatus?.torrentstreamSettings?.enabled ? [{
                             name: "Torrent streaming",
                             iconType: PiMonitorPlayDuotone,
@@ -483,12 +483,6 @@ export function EntrySectionTabs(props: EntrySectionTabs) {
                             iconType: HiOutlineServerStack,
                             isCurrent: isDebridStreamingView,
                             onClick: () => setView("debridstream"),
-                        }] : []),
-                        ...(serverStatus?.settings?.library?.enableOnlinestream ? [{
-                            name: "Online streaming",
-                            iconType: FiGlobe,
-                            isCurrent: isOnlineStreamingView,
-                            onClick: () => setView("onlinestream"),
                         }] : []),
                         ...pluginTabs.map(tab => ({
                             name: tab.name,
