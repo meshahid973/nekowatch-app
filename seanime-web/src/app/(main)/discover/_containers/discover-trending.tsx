@@ -6,6 +6,7 @@ import { __discover_clickedCarouselDotAtom, __discover_hoveringHeaderAtom } from
 import { __discover_trendingGenresAtom, useDiscoverTrendingAnime } from "@/app/(main)/discover/_lib/handle-discover-queries"
 import { ADVANCED_SEARCH_MEDIA_GENRES } from "@/app/(main)/search/_lib/advanced-search-constants"
 import { Carousel, CarouselContent, CarouselDotButtons } from "@/components/ui/carousel"
+import { __isElectronDesktop__ } from "@/types/constants"
 import { atom } from "jotai"
 import { useAtom, useAtomValue, useSetAtom } from "jotai/react"
 import React, { useEffect, useState } from "react"
@@ -41,6 +42,11 @@ export function DiscoverTrending() {
 
     const t = React.useRef<NodeJS.Timeout | null>(null)
     useEffect(() => {
+        // NekoWatch Desktop should remain visually stable. The upstream 12-second
+        // hero rotation causes noticeable flashing/flicker in Electron when the
+        // large banner, metadata and gradients transition at the same time.
+        if (__isElectronDesktop__) return
+
         t.current = setInterval(() => {
             setHeaderIsTransitioning(true)
             setTimeout(() => {
@@ -59,6 +65,14 @@ export function DiscoverTrending() {
     // Update randomNumber when animeRandomNumber changes from outside
     useEffect(() => {
         if (animeRandomNumber !== randomNumber) {
+            // Manual carousel-dot changes stay available on desktop, but update
+            // immediately rather than using the full-screen fade transition.
+            if (__isElectronDesktop__) {
+                setHeaderIsTransitioning(false)
+                setRandomNumber(animeRandomNumber)
+                return
+            }
+
             setHeaderIsTransitioning(true)
             setTimeout(() => {
                 setRandomNumber(animeRandomNumber)
@@ -98,7 +112,7 @@ export function DiscoverTrending() {
                 align: "start",
                 dragFree: true,
             }}
-            autoScroll
+            autoScroll={!__isElectronDesktop__}
         >
             <GenreSelector />
             {/*<CarouselMasks />*/}
