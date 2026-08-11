@@ -10,6 +10,7 @@ import (
 	"seanime/internal/extension"
 	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
 	"seanime/internal/library/anime"
+	nekowatch_provider "seanime/internal/onlinestream/nekowatch"
 	"seanime/internal/platforms/platform"
 	"seanime/internal/util"
 	"seanime/internal/util/filecache"
@@ -91,7 +92,7 @@ type (
 )
 
 func NewRepository(opts *NewRepositoryOptions) *Repository {
-	return &Repository{
+	ret := &Repository{
 		logger:                opts.Logger,
 		metadataProviderRef:   opts.MetadataProviderRef,
 		fileCacher:            opts.FileCacher,
@@ -100,6 +101,45 @@ func NewRepository(opts *NewRepositoryOptions) *Repository {
 		platformRef:           opts.PlatformRef,
 		db:                    opts.Database,
 	}
+
+	// NekoWatch is a native part of this fork, not an optional external extension.
+	// Register it as soon as the online-stream repository exists so the provider
+	// list and Watch flow cannot race the asynchronous extension loader.
+	ret.ensureNekoWatchProvider()
+
+	return ret
+}
+
+func (r *Repository) ensureNekoWatchProvider() {
+	if _, found := r.extensionBankRef.Get().Get(nekowatch_provider.ProviderID); found {
+		return
+	}
+
+	ext := extension.Extension{
+		ID:          nekowatch_provider.ProviderID,
+		Name:        "NekoWatch",
+		Version:     "0.1.0-dev",
+		ManifestURI: "builtin",
+		Language:    extension.LanguageGo,
+		Type:        extension.TypeOnlinestreamProvider,
+		Description: "Built-in NekoWatch streaming provider backed by the NekoWatch API.",
+		Author:      "NekoWatch",
+		Lang:        "multi",
+		Website:     "https://nekowatch.xyz",
+	}
+
+	r.extensionBankRef.Get().Set(
+		nekowatch_provider.ProviderID,
+		extension.NewOnlinestreamProviderExtension(&ext, nekowatch_provider.New()),
+	)
+}
+
+func (r *Repository) resolveProvider(provider string) string {
+	provider = strings.TrimSpace(provider)
+	if provider == "" {
+		return nekowatch_provider.ProviderID
+	}
+	return provider
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,10 +191,7 @@ func (r *Repository) EmptyCache(mediaId int) error {
 
 func (r *Repository) GetMediaEpisodes(provider string, media *anilist.BaseAnime, dubbed bool) ([]*Episode, error) {
 	episodes := make([]*Episode, 0)
-
-	if provider == "" {
-		return episodes, nil
-	}
+	provider = r.resolveProvider(provider)
 
 	// +---------------------+
 	// |       Animap        |
@@ -236,6 +273,7 @@ func (r *Repository) GetMediaEpisodes(provider string, media *anilist.BaseAnime,
 }
 
 func (r *Repository) GetEpisodeSources(ctx context.Context, provider string, mId int, number int, dubbed bool, year int, refresh bool) (*EpisodeSource, error) {
+	provider = r.resolveProvider(provider)
 
 	// +---------------------+
 	// |        Media        |
