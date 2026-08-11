@@ -1,0 +1,31 @@
+/* NekoWatch Desktop / Electron control normalization.
+ *
+ * Chromium can expose native Windows form-control chrome around raw buttons
+ * even when the surrounding Seanime UI is fully themed. Keep this file small
+ * and limited to control chrome so normal theme colors/layout remain owned by
+ * the existing Tailwind styles.
+ */
+
+button,
+input[type="button"],
+input[type="reset"],
+input[type="submit"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+
+/* Discover banner slide indicators are raw <button> elements. */
+[data-discover-page-header] button[aria-label^="Go to slide "] {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Standard carousel indicators are div-based, but explicitly remove any
+ * control/debug border that may leak in from the Electron rendering path. */
+.UI-Carousel__root [class*="group/dot-button"] > div {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+}
