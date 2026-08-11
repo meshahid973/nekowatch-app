@@ -1,7 +1,14 @@
 import { atom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 
-export const __onlinestream_selectedProviderAtom = atomWithStorage<string | null>("sea-onlinestream-provider", null, undefined, { getOnInit: true })
+export const NEKOWATCH_ONLINESTREAM_PROVIDER_ID = "nekowatch"
+
+export const __onlinestream_selectedProviderAtom = atomWithStorage<string | null>(
+    "sea-onlinestream-provider",
+    NEKOWATCH_ONLINESTREAM_PROVIDER_ID,
+    undefined,
+    { getOnInit: true },
+)
 
 export type OnlinestreamAudioTrackPreference = {
     trackId?: number
