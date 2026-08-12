@@ -5,9 +5,27 @@ function devOrProd(dev: string, prod: string): string {
     return import.meta.env.MODE === "development" ? dev : prod
 }
 
+function isStaticElectronDevFrontend(): boolean {
+    if (typeof window === "undefined") return false
+
+    const hostname = window.location.hostname
+    return (hostname === "127.0.0.1" || hostname === "localhost") && window.location.port === "43210"
+}
+
 export function getServerBaseUrl(removeProtocol: boolean = false): string {
     if (__isDesktop__) {
-        let ret = devOrProd(`http://127.0.0.1:${__DEV_SERVER_PORT}`, "http://127.0.0.1:43211")
+        // NekoWatch desktop development serves a compiled/static Denshi build on
+        // 127.0.0.1:43210 to avoid Rsbuild HMR/compositor instability. A static
+        // `rsbuild build` has MODE=production, so MODE alone cannot identify the
+        // development sidecar. Electron development always serves that frontend
+        // on :43210 and launches the Go sidecar on :43000.
+        //
+        // Packaged builds keep using the production sidecar on :43211.
+        const isStaticDev = isStaticElectronDevFrontend()
+        let ret = isStaticDev
+            ? `http://127.0.0.1:${__DEV_SERVER_PORT}`
+            : devOrProd(`http://127.0.0.1:${__DEV_SERVER_PORT}`, "http://127.0.0.1:43211")
+
         if (removeProtocol) {
             ret = ret.replace("http://", "").replace("https://", "")
         }
